@@ -3,6 +3,7 @@ class_name QuickAddMenu extends EditorPlugin
 
 var menu_button:MenuButton
 var parent_node:Node
+var groups:Dictionary[int, PopupMenu]
 
 static var item_instances:Dictionary[int, Item]
 
@@ -46,7 +47,6 @@ func _enter_tree() -> void:
 
 	# Finalize.
 	
-	menu_button.get_popup().id_pressed.connect(_item_selected)
 	menu_button.about_to_popup.connect(_update_add_list)
 	
 	if EditorInterface.get_selection().get_selected_nodes().size() == 0:
@@ -77,11 +77,20 @@ func _update_add_list() -> void:
 	elif parent_node is Node:
 		items = node_list
 	
+	groups = {0 : menu_button.get_popup()}
+	
 	for i in items:
 		if i.header:
-			menu_button.get_popup().add_separator(i.name)
+			groups[i.parent_group_id].add_separator(i.name, i.id)
+		elif i.group:
+			var popup:PopupMenu = PopupMenu.new()
+			groups[i.parent_group_id].add_submenu_node_item(i.name, popup, i.group_id)
+			groups[i.group_id] = popup
 		else:
-			menu_button.get_popup().add_icon_item(i.icon, i.name, i.id)
+			groups[i.parent_group_id].add_icon_item(i.icon, i.name, i.id)
+	
+	for i:PopupMenu in groups.values():
+		i.id_pressed.connect(_item_selected)
 
 ## Gets an editor icon.
 static func get_icon(icon:String) -> Texture2D:
@@ -90,9 +99,15 @@ static func get_icon(icon:String) -> Texture2D:
 class Item:
 	var name:String
 	var icon:Texture2D
+	
 	var header:bool = false
+	
+	var group:bool = false
+	var group_id:int
+	
 	var spawn_callable:Callable
 	
+	var parent_group_id:int
 	var id:int
 	
 	## Get a unique id for an instance.
@@ -103,20 +118,31 @@ class Item:
 		else:
 			return r
 	
-	func _init(name:String, icon:Texture2D, spawn_callable:Callable) -> void:
+	## Creates an item.
+	func _init(name:String, icon:Texture2D, spawn_callable:Callable, parent_group_id:int = 0) -> void:
 		self.name = name
 		self.icon = icon
 		self.spawn_callable = spawn_callable
-		self.header = header
 		
+		self.header = false
+		self.group = false
+		
+		self.parent_group_id = parent_group_id
 		self.id = _get_new_id()
 		
 		QuickAddMenu.item_instances[self.id] = self
 	
-	## Creates a header item.
-	static func new_header(name:String, icon:Texture2D = null) -> Item:
-		var preset = Item.new(name, icon, (func(): return false))
+	## Creates an header item.
+	static func new_header(name:String, icon:Texture2D = null, parent_group_id:int = 0) -> Item:
+		var preset = Item.new(name, icon, (func(): return false), parent_group_id)
 		preset.header = true
+		return preset
+	
+	## Creates an group item.
+	static func new_group(name:String, group_id:int, parent_group_id:int = 0) -> Item:
+		var preset = Item.new(name, null, (func(): return false), parent_group_id)
+		preset.group = true
+		preset.group_id = group_id
 		return preset
 
 ## Items for [Node3D]s.
@@ -134,7 +160,12 @@ static var node_3d_list:Array[Item] = [
 	Item.new("Sphere CSG", get_icon("CSGSphere3D"), func(): return _create_csg_3d(1)),
 	Item.new("Cylinder CSG", get_icon("CSGCylinder3D"), func(): return _create_csg_3d(2)),
 	Item.new("Torus CSG", get_icon("CSGTorus3D"), func(): return _create_csg_3d(3)),
-	Item.new("CSG Combiner", get_icon("CSGCombiner3D"), func(): return _create_csg_3d(4))
+	Item.new("CSG Combiner", get_icon("CSGCombiner3D"), func(): return _create_csg_3d(4)),
+	Item.new_header("General"),
+	Item.new_group("Nodes", 1),
+	Item.new("Node 2D", get_icon("Node2D"), func(): return _create_node(0), 1),
+	Item.new("Node 3D", get_icon("Node3D"), func(): return _create_node(1), 1),
+	Item.new("Control", get_icon("Control"), func(): return _create_node(2), 1)
 ]
 
 ## Items for [Node2D]s.
@@ -145,6 +176,11 @@ static var node_2d_list:Array[Item] = [
 	Item.new("Tile Map", get_icon("TileMapLayer"), func(): return _create_node_2d(2)),
 	Item.new("Static Body", get_icon("StaticBody2D"), func(): return _create_node_2d(3)),
 	Item.new("Collision Shape", get_icon("CollisionShape2D"), func(): return _create_node_2d(4)),
+	Item.new_header("General"),
+	Item.new_group("Nodes", 1),
+	Item.new("Node 2D", get_icon("Node2D"), func(): return _create_node(0), 1),
+	Item.new("Node 3D", get_icon("Node3D"), func(): return _create_node(1), 1),
+	Item.new("Control", get_icon("Control"), func(): return _create_node(2), 1)
 ]
 
 ## Items for [Control]s.
@@ -155,7 +191,12 @@ static var control_list:Array[Item] = [
 	Item.new("Label", get_icon("Label"), func(): return _create_control(2)),
 	Item.new("Line Edit", get_icon("LineEdit"), func(): return _create_control(3)),
 	Item.new("VBox Container", get_icon("VBoxContainer"), func(): return _create_control(4)),
-	Item.new("HBox Container", get_icon("HBoxContainer"), func(): return _create_control(5))
+	Item.new("HBox Container", get_icon("HBoxContainer"), func(): return _create_control(5)),
+	Item.new_header("General"),
+	Item.new_group("Nodes", 1),
+	Item.new("Node 2D", get_icon("Node2D"), func(): return _create_node(0), 1),
+	Item.new("Node 3D", get_icon("Node3D"), func(): return _create_node(1), 1),
+	Item.new("Control", get_icon("Control"), func(): return _create_node(2), 1)
 ]
 
 ## Items for [Node].
@@ -306,6 +347,9 @@ static func _create_node_2d(type:int) -> Array[Node]:
 func _item_selected(id:int) -> void:
 	if parent_node == null:
 		parent_node = get_editor_interface().get_edited_scene_root().get_child(0)
+	
+	for i:PopupMenu in groups.values():
+		i.id_pressed.disconnect(_item_selected)
 	
 	# Get Correct List.
 	
