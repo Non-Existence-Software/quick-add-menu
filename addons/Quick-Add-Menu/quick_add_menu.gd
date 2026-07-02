@@ -48,6 +48,7 @@ func _enter_tree() -> void:
 	# Finalize.
 	
 	menu_button.about_to_popup.connect(_update_add_list)
+	menu_button.get_popup().close_requested.connect(_clear_id_signals)
 	
 	if EditorInterface.get_selection().get_selected_nodes().size() == 0:
 		menu_button.hide()
@@ -91,6 +92,10 @@ func _update_add_list() -> void:
 	
 	for i:PopupMenu in groups.values():
 		i.id_pressed.connect(_item_selected)
+
+func _clear_id_signals():
+	for i:PopupMenu in groups.values():
+		i.id_pressed.disconnect(_item_selected)
 
 ## Gets an editor icon.
 static func get_icon(icon:String) -> Texture2D:
@@ -348,8 +353,7 @@ func _item_selected(id:int) -> void:
 	if parent_node == null:
 		parent_node = get_editor_interface().get_edited_scene_root().get_child(0)
 	
-	for i:PopupMenu in groups.values():
-		i.id_pressed.disconnect(_item_selected)
+	_clear_id_signals()
 	
 	# Get Correct List.
 	
