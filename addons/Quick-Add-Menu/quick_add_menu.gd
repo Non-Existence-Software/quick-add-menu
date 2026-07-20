@@ -368,7 +368,7 @@ func _item_selected(id:int) -> void:
 		item_list = node_list
 	else:
 		return # parent_node is null or somehow not a node_list.
-	 # Create Nodes.
+	# Create Nodes.
 
 	var item:Item = item_instances[id]
 	
@@ -389,7 +389,7 @@ func _select_add(parent_node_path:String,item:Item) -> void:
 		return
 	var got_parent_node = get_editor_interface().get_edited_scene_root().get_node(NodePath(parent_node_path))
 	# Add To Selected Node as Child.
-	var nodes_to_spawn:Array[Node] ## First node_list is parent, node_list after are children
+	var nodes_to_spawn:Array[Node] # First node_list is parent, node_list after are children
 	nodes_to_spawn = item.spawn_callable.call()
 	
 	# Rename.
