@@ -20,7 +20,7 @@ func _enter_tree() -> void:
 	var top_container:HBoxContainer = _find_container()
 	
 	if top_container == null:
-		print_rich("[color=\"yellow\"]Quick Add button container not found. Unable to add Quick Add button to scene dock.[/color]")
+		print_rich('[color="yellow"]Quick Add button container not found. Unable to add Quick Add button to scene dock.[/color]')
 		return
 	
 	menu_button = MenuButton.new()
@@ -368,12 +368,11 @@ func _item_selected(id:int) -> void:
 		item_list = node_list
 	else:
 		return # parent_node is null or somehow not a node_list.
-# Create Nodes.
+																																																																																																																																																																																																																																																									# Create Nodes.
 
 	var item:Item = item_instances[id]
 	
-	
-	get_undo_redo().create_action("Quick Add", UndoRedo.MERGE_ALL,parent_node)
+	get_undo_redo().create_action("Quick Add", UndoRedo.MERGE_ALL, parent_node)
 	get_undo_redo().add_do_method(self, "_select_add", String(get_editor_interface().get_edited_scene_root().get_path_to(parent_node)), item)
 	get_undo_redo().add_undo_method(self, "_quick_remove", String(get_editor_interface().get_edited_scene_root().get_path_to(parent_node)) + "/" + item.name)
 	get_undo_redo().commit_action()
@@ -382,11 +381,11 @@ func _quick_remove(path:String):
 	if get_editor_interface().get_edited_scene_root().get_node(NodePath(path)):
 		get_editor_interface().get_edited_scene_root().get_node(NodePath(path)).queue_free()
 	else:
-		print_rich('[color="yellow"]Node not found.[/color]')
+		print_rich('[color="yellow"]Parent node not found.[/color]')
 
 func _select_add(parent_node_path:String,item:Item) -> void:
 	if !get_editor_interface().get_edited_scene_root().has_node(NodePath(parent_node_path)):
-		print_rich('[color="yellow"]Node not found.[/color]')
+		print_rich('[color="yellow"]Parent node not found.[/color]')
 		return
 	var got_parent_node = get_editor_interface().get_edited_scene_root().get_node(NodePath(parent_node_path))
 	# Add To Selected Node as Child.
@@ -416,7 +415,6 @@ func _select_add(parent_node_path:String,item:Item) -> void:
 	EditorInterface.get_selection().clear()
 	EditorInterface.edit_node(nodes_to_spawn[0])
 
-
 func _handles(object) -> bool:
 	return object is Node && object != null
 
@@ -438,7 +436,7 @@ func _find_container() -> HBoxContainer:
 	var scene_tree_dock = _get_scene_tree_dock()
 	
 	if scene_tree_dock == null:
-		print_rich("[color=\"yellow\"]Scene Tree Dock not found. Unable to get container.[/color]")
+		print_rich('[color="yellow"]Scene Tree Dock not found. Unable to get container.[/color]')
 		return
 	
 	var add_node_button:Button = _find_node_custom(scene_tree_dock, "Button", _is_add_node_button)
