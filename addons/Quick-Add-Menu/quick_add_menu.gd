@@ -368,27 +368,27 @@ func _item_selected(id:int) -> void:
 		item_list = node_list
 	else:
 		return # parent_node is null or somehow not a node_list.
-		# Create Nodes.
+# Create Nodes.
 
 	var item:Item = item_instances[id]
 	
 	
-	get_undo_redo().create_action("Quick Add",UndoRedo.MERGE_ALL,parent_node)
-	get_undo_redo().add_do_method(self,"_select_add",String(get_editor_interface().get_edited_scene_root().get_path_to(parent_node)),item)
-	get_undo_redo().add_undo_method(self,"_quick_remove",String(get_editor_interface().get_edited_scene_root().get_path_to(parent_node))+"/"+item.name)
+	get_undo_redo().create_action("Quick Add", UndoRedo.MERGE_ALL,parent_node)
+	get_undo_redo().add_do_method(self, "_select_add", String(get_editor_interface().get_edited_scene_root().get_path_to(parent_node)), item)
+	get_undo_redo().add_undo_method(self, "_quick_remove", String(get_editor_interface().get_edited_scene_root().get_path_to(parent_node)) + "/" + item.name)
 	get_undo_redo().commit_action()
 
 func _quick_remove(path:String):
 	if get_editor_interface().get_edited_scene_root().get_node(NodePath(path)):
 		get_editor_interface().get_edited_scene_root().get_node(NodePath(path)).queue_free()
 	else:
-		print("uhuh: ",path)
+		print_rich('[color="yellow"]Node not found.[/color]')
 
 func _select_add(parent_node_path:String,item:Item) -> void:
 	if !get_editor_interface().get_edited_scene_root().has_node(NodePath(parent_node_path)):
-		print("erm")
+		print_rich('[color="yellow"]Node not found.[/color]')
 		return
-	var parent_nodde = get_editor_interface().get_edited_scene_root().get_node(NodePath(parent_node_path))
+	var got_parent_node = get_editor_interface().get_edited_scene_root().get_node(NodePath(parent_node_path))
 	# Add To Selected Node as Child.
 	var nodes_to_spawn:Array[Node] ## First node_list is parent, node_list after are children
 	nodes_to_spawn = item.spawn_callable.call()
@@ -397,15 +397,15 @@ func _select_add(parent_node_path:String,item:Item) -> void:
 	
 	var original_name:String = nodes_to_spawn[0].name
 	
-	if parent_nodde.get_children().any(func(child): return child.name == original_name): # If sibling already has name, find new available name
+	if got_parent_node.get_children().any(func(child): return child.name == original_name): # If sibling already has name, find new available name
 		var last_index:int
 		
-		for i in parent_nodde.get_children():
+		for i in got_parent_node.get_children():
 			if original_name in i.name:
 				last_index += 1
 		
 		nodes_to_spawn[0].name = str(original_name, " ", last_index)
-	parent_nodde.add_child(nodes_to_spawn[0])
+	got_parent_node.add_child(nodes_to_spawn[0])
 	nodes_to_spawn[0].owner = get_editor_interface().get_edited_scene_root()
 	for i in range(1, nodes_to_spawn.size()):
 		nodes_to_spawn[0].add_child(nodes_to_spawn[i])
