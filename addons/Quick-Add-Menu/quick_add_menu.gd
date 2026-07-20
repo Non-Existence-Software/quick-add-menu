@@ -368,7 +368,7 @@ func _item_selected(id:int) -> void:
 		item_list = node_list
 	else:
 		return # parent_node is null or somehow not a node_list.
-																																																																																																																																																																																																																																																									# Create Nodes.
+	 # Create Nodes.
 
 	var item:Item = item_instances[id]
 	
