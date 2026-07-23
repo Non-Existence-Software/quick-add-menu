@@ -12,7 +12,15 @@ const TOOLTIP = "Quick Add Child Node... (Ctrl+E)\nQuickly Add/Create a New Node
 ## Add custom items
 func add_custom_items():
 	# Add your own code
-	pass
+	var my_id:int = 12345
+	var group = Item.new_group("My Nodes", my_id)
+
+	node_3d_list.append(group)
+
+	var my_second_id:int = 123456
+	var group_2 = Item.new_group("My Other Nodes", my_second_id, my_id)
+	
+	node_3d_list.append(group_2)
 
 func _enter_tree() -> void:
 	add_custom_items()
