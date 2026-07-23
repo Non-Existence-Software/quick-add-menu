@@ -368,27 +368,33 @@ func _item_selected(id:int) -> void:
 		item_list = node_list
 	else:
 		return # parent_node is null or somehow not a node_list.
+	
 	# Create Nodes.
 
 	var item:Item = item_instances[id]
 	
-	get_undo_redo().create_action("Quick Add", UndoRedo.MERGE_ALL, parent_node)
-	get_undo_redo().add_do_method(self, "_select_add", String(get_editor_interface().get_edited_scene_root().get_path_to(parent_node)), item)
-	get_undo_redo().add_undo_method(self, "_quick_remove", String(get_editor_interface().get_edited_scene_root().get_path_to(parent_node)) + "/" + item.name)
+	get_undo_redo().create_action("Quick Add %s" % item.name, UndoRedo.MERGE_ALL, parent_node)
+	
+	var parent_node_path = String(get_editor_interface().get_edited_scene_root().get_path_to(parent_node))
+	
+	get_undo_redo().add_do_method(self, "_select_add", parent_node_path, item)
+	get_undo_redo().add_undo_method(self, "_quick_remove", parent_node_path + "/" + item.name)
 	get_undo_redo().commit_action()
 
-func _quick_remove(path:String):
-	if get_editor_interface().get_edited_scene_root().get_node(NodePath(path)):
-		get_editor_interface().get_edited_scene_root().get_node(NodePath(path)).queue_free()
+func _quick_remove(item_path:String):
+	var node:Node = get_editor_interface().get_edited_scene_root().get_node(NodePath(item_path))
+	if node != null:
+		node.queue_free()
 	else:
-		print_rich('[color="yellow"]Parent node not found.[/color]')
+		print_rich('[color="yellow"]Item not found.[/color]')
 
-func _select_add(parent_node_path:String,item:Item) -> void:
+func _select_add(parent_node_path:String, item:Item) -> void:
 	if !get_editor_interface().get_edited_scene_root().has_node(NodePath(parent_node_path)):
 		print_rich('[color="yellow"]Parent node not found.[/color]')
 		return
-	var got_parent_node = get_editor_interface().get_edited_scene_root().get_node(NodePath(parent_node_path))
-	# Add To Selected Node as Child.
+	
+	var _parent_node = get_editor_interface().get_edited_scene_root().get_node(NodePath(parent_node_path))
+	
 	var nodes_to_spawn:Array[Node] # First node_list is parent, node_list after are children
 	nodes_to_spawn = item.spawn_callable.call()
 	
@@ -396,16 +402,20 @@ func _select_add(parent_node_path:String,item:Item) -> void:
 	
 	var original_name:String = nodes_to_spawn[0].name
 	
-	if got_parent_node.get_children().any(func(child): return child.name == original_name): # If sibling already has name, find new available name
+	if _parent_node.get_children().any(func(child): return child.name == original_name): # If sibling already has name, find new available name
 		var last_index:int
 		
-		for i in got_parent_node.get_children():
+		for i in _parent_node.get_children():
 			if original_name in i.name:
 				last_index += 1
 		
 		nodes_to_spawn[0].name = str(original_name, " ", last_index)
-	got_parent_node.add_child(nodes_to_spawn[0])
+	
+	# Add To Selected Node as Child.
+	
+	_parent_node.add_child(nodes_to_spawn[0])
 	nodes_to_spawn[0].owner = get_editor_interface().get_edited_scene_root()
+	
 	for i in range(1, nodes_to_spawn.size()):
 		nodes_to_spawn[0].add_child(nodes_to_spawn[i])
 		nodes_to_spawn[i].owner = get_editor_interface().get_edited_scene_root()
