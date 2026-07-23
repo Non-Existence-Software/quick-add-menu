@@ -81,7 +81,8 @@ This code should end up with this result:
 
 Groups within the quick menu consist of a `String` `name`, and an `int` ID to identify if an item should be under that group.  
 
-> ![NOTE] The root group of the whole menu has the ID `0`, so you cannot use it. And if you want to add an item to the `Nodes` group, use the ID `1`
+> [!NOTE]
+> The root group of the whole menu has the ID `0`, so you cannot use it. And if you want to add an item to the `Nodes` group, use the ID `1`
 
 Here is an example of creating a group in code:
 
