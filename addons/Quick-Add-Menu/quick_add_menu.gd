@@ -9,10 +9,25 @@ static var item_instances:Dictionary[int, QuickAddItem]
 
 const TOOLTIP = "Quick Add Child Node... (Ctrl+E)\nQuickly Add/Create a New Node."
 
+const LOGO_PATH:String = "res://addons/Quick-Add-Menu/Icons/QuickAdd.svg"
+const PLANE_MESH_ICON_PATH:String = "res://addons/Quick-Add-Menu/Icons/PlaneMesh.svg"
+const PRISM_MESH_ICON_PATH:String = "res://addons/Quick-Add-Menu/Icons/PrismMesh.svg"
+const TORUS_MESH_ICON_PATH:String = "res://addons/Quick-Add-Menu/Icons/TorusMesh.svg"
+
 ## Add custom items
 func add_custom_items():
 	# Add your own code
 	pass
+
+## Reimports icons
+func _reimport_icons() -> void:
+	# Code from here - https://forum.godotengine.org/t/manually-triggering-a-reimport-via-an-editorscript-results-in-progress-dialog-errors/123523/8
+	
+	var root = EditorInterface.get_base_control()
+	root.get_tree().process_frame.connect(func():
+		var file_system = EditorInterface.get_resource_filesystem()
+		file_system.reimport_files([LOGO_PATH, PLANE_MESH_ICON_PATH, PRISM_MESH_ICON_PATH, TORUS_MESH_ICON_PATH])
+	, CONNECT_ONE_SHOT)
 
 func _enter_tree() -> void:
 	add_custom_items()
@@ -23,9 +38,11 @@ func _enter_tree() -> void:
 		print_rich('[color="yellow"]Quick Add button container not found. Unable to add Quick Add button to scene dock.[/color]')
 		return
 	
+	_reimport_icons()
+	
 	menu_button = MenuButton.new()
 	menu_button.theme_type_variation = &"FlatMenuButton"
-	menu_button.icon = load("res://addons/Quick-Add-Menu/Icons/QuickAdd.svg")
+	menu_button.icon = load(LOGO_PATH)
 	menu_button.flat = false
 	menu_button.tooltip_text = TOOLTIP
 	
