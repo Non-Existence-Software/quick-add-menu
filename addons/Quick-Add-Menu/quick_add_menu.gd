@@ -384,7 +384,13 @@ func _item_selected(id:int) -> void:
 func _quick_remove(item_path:String):
 	var node:Node = get_editor_interface().get_edited_scene_root().get_node(NodePath(item_path))
 	if node != null:
+		var parent = node.get_parent()
 		node.queue_free()
+		
+		var selected_nodes = get_editor_interface().get_selection().get_selected_nodes()
+		
+		if selected_nodes.size() == 1 && selected_nodes[0] == node:
+			get_editor_interface().edit_node(parent)
 	else:
 		print_rich('[color="yellow"]Item not found.[/color]')
 
