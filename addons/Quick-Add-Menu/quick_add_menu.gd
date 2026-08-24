@@ -5,7 +5,7 @@ var menu_button:MenuButton
 var parent_node:Node
 var groups:Dictionary[int, PopupMenu]
 
-static var item_instances:Dictionary[int, Item]
+static var item_instances:Dictionary[int, QuickAddItem]
 
 const TOOLTIP = "Quick Add Child Node... (Ctrl+E)\nQuickly Add/Create a New Node."
 
@@ -62,25 +62,21 @@ func _exit_tree() -> void:
 ## Updates list of items to quick add.
 func _update_add_list() -> void:
 	menu_button.get_popup().clear()
-	var items:Array[Item]
 	
 	if parent_node == null:
 		var nodes = EditorInterface.get_selection().get_selected_nodes()
 		if nodes.size() > 0:
 			parent_node = nodes[0]
 	
-	if parent_node is Node3D:
-		items = node_3d_list
-	elif parent_node is Node2D:
-		items = node_2d_list
-	elif parent_node is Control:
-		items = control_list
-	elif parent_node is Node:
-		items = node_list
+	var items:QuickAddItemList = get_quick_add_item_list(parent_node)
+	
+	if !items:
+		push_error("No quick add item list found.")
+		return
 	
 	groups = {0 : menu_button.get_popup()}
 	
-	for i in items:
+	for i in items.list:
 		if i.header:
 			groups[i.parent_group_id].add_separator(i.name, i.id)
 		elif i.group:
@@ -101,7 +97,7 @@ func _clear_id_signals():
 static func get_icon(icon:String) -> Texture2D:
 	return EditorInterface.get_base_control().get_theme_icon(icon, "EditorIcons")
 
-class Item:
+class QuickAddItem:
 	var name:String
 	var icon:Texture2D
 	
@@ -138,80 +134,94 @@ class Item:
 		QuickAddMenu.item_instances[self.id] = self
 	
 	## Creates an header item.
-	static func new_header(name:String, icon:Texture2D = null, parent_group_id:int = 0) -> Item:
-		var preset = Item.new(name, icon, (func(): return false), parent_group_id)
+	static func new_header(name:String, icon:Texture2D = null, parent_group_id:int = 0) -> QuickAddItem:
+		var preset = QuickAddItem.new(name, icon, (func(): return false), parent_group_id)
 		preset.header = true
 		return preset
 	
 	## Creates an group item.
-	static func new_group(name:String, group_id:int, parent_group_id:int = 0) -> Item:
-		var preset = Item.new(name, null, (func(): return false), parent_group_id)
+	static func new_group(name:String, group_id:int, parent_group_id:int = 0) -> QuickAddItem:
+		var preset = QuickAddItem.new(name, null, (func(): return false), parent_group_id)
 		preset.group = true
 		preset.group_id = group_id
 		return preset
 
+class QuickAddItemList:
+	var list:Array[QuickAddItem]
+	
+	func _init(list:Array[QuickAddItem]) -> void:
+		self.list = list
+	
+	func append(quick_add_item:QuickAddItem) -> QuickAddItemList:
+		list.append(quick_add_item)
+		return self
+	
+	func append_list(quick_add_item:QuickAddItemList) -> QuickAddItemList:
+		list.append_array(quick_add_item.list)
+		return self
+
 ## Items for [Node3D]s.
-static var node_3d_list:Array[Item] = [
-	Item.new_header("Primitive Shapes"),
-	Item.new("Plane", load("res://addons/Quick-Add-Menu/Icons/PlaneMesh.svg"), func(): return _create_primitive_3d(0)),
-	Item.new("Box", get_icon("BoxShape3D"), func(): return _create_primitive_3d(1)),
-	Item.new("Sphere", get_icon("SphereShape3D"), func(): return _create_primitive_3d(2)),
-	Item.new("Capsule", get_icon("CapsuleShape3D"), func(): return _create_primitive_3d(3)),
-	Item.new("Cylinder", get_icon("CylinderShape3D"), func(): return _create_primitive_3d(4)),
-	Item.new("Prism", load("res://addons/Quick-Add-Menu/Icons/PrismMesh.svg"), func(): return _create_primitive_3d(5)),
-	Item.new("Torus", load("res://addons/Quick-Add-Menu/Icons/TorusMesh.svg"), func(): return _create_primitive_3d(6)),
-	Item.new_header("CSGs"),
-	Item.new("Box CSG", get_icon("CSGBox3D"), func(): return _create_csg_3d(0)),
-	Item.new("Sphere CSG", get_icon("CSGSphere3D"), func(): return _create_csg_3d(1)),
-	Item.new("Cylinder CSG", get_icon("CSGCylinder3D"), func(): return _create_csg_3d(2)),
-	Item.new("Torus CSG", get_icon("CSGTorus3D"), func(): return _create_csg_3d(3)),
-	Item.new("CSG Combiner", get_icon("CSGCombiner3D"), func(): return _create_csg_3d(4)),
-	Item.new_header("General"),
-	Item.new_group("Nodes", 1),
-	Item.new("Node 2D", get_icon("Node2D"), func(): return _create_node(0), 1),
-	Item.new("Node 3D", get_icon("Node3D"), func(): return _create_node(1), 1),
-	Item.new("Control", get_icon("Control"), func(): return _create_node(2), 1)
-]
+static var node_3d_list:QuickAddItemList = QuickAddItemList.new([
+	QuickAddItem.new_header("Primitive Shapes"),
+	QuickAddItem.new("Plane", load("res://addons/Quick-Add-Menu/Icons/PlaneMesh.svg"), func(): return _create_primitive_3d(0)),
+	QuickAddItem.new("Box", get_icon("BoxShape3D"), func(): return _create_primitive_3d(1)),
+	QuickAddItem.new("Sphere", get_icon("SphereShape3D"), func(): return _create_primitive_3d(2)),
+	QuickAddItem.new("Capsule", get_icon("CapsuleShape3D"), func(): return _create_primitive_3d(3)),
+	QuickAddItem.new("Cylinder", get_icon("CylinderShape3D"), func(): return _create_primitive_3d(4)),
+	QuickAddItem.new("Prism", load("res://addons/Quick-Add-Menu/Icons/PrismMesh.svg"), func(): return _create_primitive_3d(5)),
+	QuickAddItem.new("Torus", load("res://addons/Quick-Add-Menu/Icons/TorusMesh.svg"), func(): return _create_primitive_3d(6)),
+	QuickAddItem.new_header("CSGs"),
+	QuickAddItem.new("Box CSG", get_icon("CSGBox3D"), func(): return _create_csg_3d(0)),
+	QuickAddItem.new("Sphere CSG", get_icon("CSGSphere3D"), func(): return _create_csg_3d(1)),
+	QuickAddItem.new("Cylinder CSG", get_icon("CSGCylinder3D"), func(): return _create_csg_3d(2)),
+	QuickAddItem.new("Torus CSG", get_icon("CSGTorus3D"), func(): return _create_csg_3d(3)),
+	QuickAddItem.new("CSG Combiner", get_icon("CSGCombiner3D"), func(): return _create_csg_3d(4)),
+	QuickAddItem.new_header("General"),
+	QuickAddItem.new_group("Nodes", 1),
+	QuickAddItem.new("Node 2D", get_icon("Node2D"), func(): return _create_node(0), 1),
+	QuickAddItem.new("Node 3D", get_icon("Node3D"), func(): return _create_node(1), 1),
+	QuickAddItem.new("Control", get_icon("Control"), func(): return _create_node(2), 1)
+])
 
 ## Items for [Node2D]s.
-static var node_2d_list:Array[Item] = [
-	Item.new_header("Nodes"),
-	Item.new("Sprite", get_icon("Sprite2D"), func(): return _create_node_2d(0)),
-	Item.new("Animated Sprite", get_icon("AnimatedSprite2D"), func(): return _create_node_2d(1)),
-	Item.new("Tile Map", get_icon("TileMapLayer"), func(): return _create_node_2d(2)),
-	Item.new("Static Body", get_icon("StaticBody2D"), func(): return _create_node_2d(3)),
-	Item.new("Collision Shape", get_icon("CollisionShape2D"), func(): return _create_node_2d(4)),
-	Item.new_header("General"),
-	Item.new_group("Nodes", 1),
-	Item.new("Node 2D", get_icon("Node2D"), func(): return _create_node(0), 1),
-	Item.new("Node 3D", get_icon("Node3D"), func(): return _create_node(1), 1),
-	Item.new("Control", get_icon("Control"), func(): return _create_node(2), 1)
-]
+static var node_2d_list:QuickAddItemList = QuickAddItemList.new([
+	QuickAddItem.new_header("Nodes"),
+	QuickAddItem.new("Sprite", get_icon("Sprite2D"), func(): return _create_node_2d(0)),
+	QuickAddItem.new("Animated Sprite", get_icon("AnimatedSprite2D"), func(): return _create_node_2d(1)),
+	QuickAddItem.new("Tile Map", get_icon("TileMapLayer"), func(): return _create_node_2d(2)),
+	QuickAddItem.new("Static Body", get_icon("StaticBody2D"), func(): return _create_node_2d(3)),
+	QuickAddItem.new("Collision Shape", get_icon("CollisionShape2D"), func(): return _create_node_2d(4)),
+	QuickAddItem.new_header("General"),
+	QuickAddItem.new_group("Nodes", 1),
+	QuickAddItem.new("Node 2D", get_icon("Node2D"), func(): return _create_node(0), 1),
+	QuickAddItem.new("Node 3D", get_icon("Node3D"), func(): return _create_node(1), 1),
+	QuickAddItem.new("Control", get_icon("Control"), func(): return _create_node(2), 1)
+])
 
 ## Items for [Control]s.
-static var control_list:Array[Item] = [
-	Item.new_header("UI Elements"),
-	Item.new("Button", get_icon("Button"), func(): return _create_control(0)),
-	Item.new("Check Box", get_icon("CheckBox"), func(): return _create_control(1)),
-	Item.new("Label", get_icon("Label"), func(): return _create_control(2)),
-	Item.new("Line Edit", get_icon("LineEdit"), func(): return _create_control(3)),
-	Item.new("VBox Container", get_icon("VBoxContainer"), func(): return _create_control(4)),
-	Item.new("HBox Container", get_icon("HBoxContainer"), func(): return _create_control(5)),
-	Item.new_header("General"),
-	Item.new_group("Nodes", 1),
-	Item.new("Node 2D", get_icon("Node2D"), func(): return _create_node(0), 1),
-	Item.new("Node 3D", get_icon("Node3D"), func(): return _create_node(1), 1),
-	Item.new("Control", get_icon("Control"), func(): return _create_node(2), 1)
-]
+static var control_list:QuickAddItemList = QuickAddItemList.new([
+	QuickAddItem.new_header("UI Elements"),
+	QuickAddItem.new("Button", get_icon("Button"), func(): return _create_control(0)),
+	QuickAddItem.new("Check Box", get_icon("CheckBox"), func(): return _create_control(1)),
+	QuickAddItem.new("Label", get_icon("Label"), func(): return _create_control(2)),
+	QuickAddItem.new("Line Edit", get_icon("LineEdit"), func(): return _create_control(3)),
+	QuickAddItem.new("VBox Container", get_icon("VBoxContainer"), func(): return _create_control(4)),
+	QuickAddItem.new("HBox Container", get_icon("HBoxContainer"), func(): return _create_control(5)),
+	QuickAddItem.new_header("General"),
+	QuickAddItem.new_group("Nodes", 1),
+	QuickAddItem.new("Node 2D", get_icon("Node2D"), func(): return _create_node(0), 1),
+	QuickAddItem.new("Node 3D", get_icon("Node3D"), func(): return _create_node(1), 1),
+	QuickAddItem.new("Control", get_icon("Control"), func(): return _create_node(2), 1)
+])
 
 ## Items for [Node].
-static var node_list:Array[Item] = [
-	Item.new_header("Nodes"),
-	Item.new("Node 2D", get_icon("Node2D"), func(): return _create_node(0)),
-	Item.new("Node 3D", get_icon("Node3D"), func(): return _create_node(1)),
-	Item.new("Control", get_icon("Control"), func(): return _create_node(2)),
-	Item.new("File Dialog", get_icon("FileDialog"), func(): return _create_node(2))
-]
+static var node_list:QuickAddItemList = QuickAddItemList.new([
+	QuickAddItem.new_header("Nodes"),
+	QuickAddItem.new("Node 2D", get_icon("Node2D"), func(): return _create_node(0)),
+	QuickAddItem.new("Node 3D", get_icon("Node3D"), func(): return _create_node(1)),
+	QuickAddItem.new("Control", get_icon("Control"), func(): return _create_node(2)),
+	QuickAddItem.new("File Dialog", get_icon("FileDialog"), func(): return _create_node(2))
+])
 
 ## Creates a [StaticBody3D] with a [MeshInstance3D] and a [CollisionShape3D] supposed to be it's children.
 static func _create_primitive_3d(type:int) -> Array[Node]:
@@ -348,30 +358,46 @@ static func _create_node_2d(type:int) -> Array[Node]:
 	
 	return [node]
 
+## A dictionary containing all lists of quick add items. [br]
+## The key is name of the node class that the list belongs to, and the value is the list itself.
+static var quick_add_item_lists:Dictionary[String, QuickAddItemList] = {
+	"Node3D" : node_3d_list,
+	"Node2D" : node_2d_list,
+	"Control" : control_list,
+	"Node" : node_list
+}
+
+## Gets the corresponding quick add item list to a node from [member quick_add_item_lists].
+static func get_quick_add_item_list(node:Node) -> QuickAddItemList:
+	var script:Script = node.get_script()
+	var node_class:String = node.get_class()
+	
+	if script:
+		var script_name = script.get_global_name()
+		var closest_script = ""
+		
+		for i in quick_add_item_lists.keys():
+			if i == script_name:
+				closest_script = i
+		return quick_add_item_lists[closest_script]
+	
+	for i in quick_add_item_lists.keys():
+		var closest_class = "Node"
+		if i == node_class || node_class in ClassDB.get_inheriters_from_class(i):
+			closest_class = i
+		return quick_add_item_lists[closest_class]
+	
+	return quick_add_item_lists["Node"]
+
 ## When an item is selected off of the list.
 func _item_selected(id:int) -> void:
 	if parent_node == null:
 		parent_node = get_editor_interface().get_edited_scene_root().get_child(0)
 	_clear_id_signals()
 	
-	# Get Correct List.
-	
-	var item_list:Array[Item]
-	
-	if parent_node is Node3D:
-		item_list = node_3d_list
-	elif parent_node is Node2D:
-		item_list = node_2d_list
-	elif parent_node is Control:
-		item_list = control_list
-	elif parent_node is Node:
-		item_list = node_list
-	else:
-		return # parent_node is null or somehow not a node_list.
-	
 	# Create Nodes.
 
-	var item:Item = item_instances[id]
+	var item:QuickAddItem = item_instances[id]
 	
 	get_undo_redo().create_action("Quick Add %s" % item.name, UndoRedo.MERGE_ALL, parent_node)
 	
@@ -392,9 +418,9 @@ func _quick_remove(item_path:String):
 		if selected_nodes.size() == 1 && selected_nodes[0] == node:
 			get_editor_interface().edit_node(parent)
 	else:
-		print_rich('[color="yellow"]Item not found.[/color]')
+		print_rich('[color="yellow"]QuickAddItem not found.[/color]')
 
-func _select_add(parent_node_path:String, item:Item) -> void:
+func _select_add(parent_node_path:String, item:QuickAddItem) -> void:
 	if !get_editor_interface().get_edited_scene_root().has_node(NodePath(parent_node_path)):
 		print_rich('[color="yellow"]Parent node not found.[/color]')
 		return
