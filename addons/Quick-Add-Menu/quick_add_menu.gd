@@ -274,7 +274,7 @@ static func _create_primitive_3d(type:int) -> Array[Node]:
 	match type:
 		0: # Plane.
 			mesh.mesh = PlaneMesh.new()
-			collider.shape = mesh.mesh.create_convex_shape()
+			collider.shape = mesh.mesh.create_convex_shape(false)
 			root.name = "Plane"
 		1: # Box.
 			mesh.mesh = BoxMesh.new()
@@ -294,11 +294,11 @@ static func _create_primitive_3d(type:int) -> Array[Node]:
 			root.name = "Cylinder"
 		5: # Prism.
 			mesh.mesh = PrismMesh.new()
-			collider.shape = mesh.mesh.create_convex_shape()
+			collider.shape = mesh.mesh.create_convex_shape(false)
 			root.name = "Prism"
 		6: # Torus.
 			mesh.mesh = TorusMesh.new()
-			collider.shape = mesh.mesh.create_trimesh_shape()
+			collider.shape = mesh.mesh.create_trimesh_shape(false)
 			root.name = "Torus"
 	
 	return [root, mesh, collider]
