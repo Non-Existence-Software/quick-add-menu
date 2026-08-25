@@ -298,7 +298,7 @@ static func _create_primitive_3d(type:int) -> Array[Node]:
 			root.name = "Prism"
 		6: # Torus.
 			mesh.mesh = TorusMesh.new()
-			collider.shape = mesh.mesh.create_trimesh_shape(false)
+			collider.shape = mesh.mesh.create_trimesh_shape()
 			root.name = "Torus"
 	
 	return [root, mesh, collider]
