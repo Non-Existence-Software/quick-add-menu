@@ -418,7 +418,12 @@ static func get_quick_add_item_list(node:Node) -> QuickAddItemList:
 		for i in quick_add_item_lists.keys():
 			if i == script_name:
 				closest_script = i
-		return quick_add_item_lists[closest_script]
+		
+		if !closest_script.is_empty():
+			return quick_add_item_lists[closest_script]
+	
+	if node_class in quick_add_item_lists.keys():
+		return quick_add_item_lists[node_class]
 	
 	for i in quick_add_item_lists.keys():
 		var closest_class = "Node"
