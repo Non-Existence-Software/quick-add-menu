@@ -36,12 +36,12 @@ const PLANE_MESH_ICON_PATH:String = "res://addons/Quick-Add-Menu/Icons/PlaneMesh
 const PRISM_MESH_ICON_PATH:String = "res://addons/Quick-Add-Menu/Icons/PrismMesh.svg"
 const TORUS_MESH_ICON_PATH:String = "res://addons/Quick-Add-Menu/Icons/TorusMesh.svg"
 
-## Add custom items
+## Add custom items.
 func add_custom_items():
 	# Add your own code
 	pass
 
-## Reimports icons
+## Reimports all icons.
 func _reimport_icons() -> void:
 	# Code from here - https://forum.godotengine.org/t/manually-triggering-a-reimport-via-an-editorscript-results-in-progress-dialog-errors/123523/8
 	
@@ -92,13 +92,12 @@ func _enter_tree() -> void:
 	if EditorInterface.get_selection().get_selected_nodes().size() == 0:
 		menu_button.hide()
 
-## Delete [member menu_button].
 func _exit_tree() -> void:
 	if menu_button != null:
 		menu_button.queue_free()
 		menu_button = null
 
-## Updates list of items to quick add.
+## Updates [member menu_button]'s item list.
 func _update_add_list() -> void:
 	menu_button.get_popup().clear()
 	
@@ -150,7 +149,7 @@ class QuickAddItem:
 	var parent_group_id:int
 	var id:int
 	
-	## Get a unique id for an instance.
+	## Gets a new unique id.
 	static func _get_new_id() -> int:
 		var r = randi_range(0, 65536)
 		if QuickAddMenu.item_instances.has(r):
@@ -172,13 +171,13 @@ class QuickAddItem:
 		
 		QuickAddMenu.item_instances[self.id] = self
 	
-	## Creates an header item.
+	## Creates a header item.
 	static func new_header(name:String, icon:Texture2D = null, parent_group_id:int = 0) -> QuickAddItem:
 		var preset = QuickAddItem.new(name, icon, (func(): return false), parent_group_id)
 		preset.header = true
 		return preset
 	
-	## Creates an group item.
+	## Creates a group item.
 	static func new_group(name:String, group_id:int, parent_group_id:int = 0) -> QuickAddItem:
 		var preset = QuickAddItem.new(name, null, (func(): return false), parent_group_id)
 		preset.group = true
@@ -199,7 +198,7 @@ class QuickAddItemList:
 		list.append_array(quick_add_item.list)
 		return self
 
-## Items for [Node3D]s.
+## Items for [Node3D].
 static var node_3d_list:QuickAddItemList = QuickAddItemList.new([
 	QuickAddItem.new_header("Primitive Shapes"),
 	QuickAddItem.new("Plane", load("res://addons/Quick-Add-Menu/Icons/PlaneMesh.svg"), func(): return _create_primitive_3d(0)),
@@ -222,7 +221,7 @@ static var node_3d_list:QuickAddItemList = QuickAddItemList.new([
 	QuickAddItem.new("Control", get_icon("Control"), func(): return _create_node(2), 1)
 ])
 
-## Items for [Node2D]s.
+## Items for [Node2D].
 static var node_2d_list:QuickAddItemList = QuickAddItemList.new([
 	QuickAddItem.new_header("Nodes"),
 	QuickAddItem.new("Sprite", get_icon("Sprite2D"), func(): return _create_node_2d(0)),
@@ -237,7 +236,7 @@ static var node_2d_list:QuickAddItemList = QuickAddItemList.new([
 	QuickAddItem.new("Control", get_icon("Control"), func(): return _create_node(2), 1)
 ])
 
-## Items for [Control]s.
+## Items for [Control].
 static var control_list:QuickAddItemList = QuickAddItemList.new([
 	QuickAddItem.new_header("UI Elements"),
 	QuickAddItem.new("Button", get_icon("Button"), func(): return _create_control(0)),
@@ -262,7 +261,7 @@ static var node_list:QuickAddItemList = QuickAddItemList.new([
 	QuickAddItem.new("File Dialog", get_icon("FileDialog"), func(): return _create_node(2))
 ])
 
-## Creates a [StaticBody3D] with a [MeshInstance3D] and a [CollisionShape3D] supposed to be it's children.
+## Creates a [StaticBody3D] with a [MeshInstance3D] and a [CollisionShape3D] supposed to be its children.
 static func _create_primitive_3d(type:int) -> Array[Node]:
 	var root = StaticBody3D.new()
 	var mesh = MeshInstance3D.new()
@@ -406,7 +405,7 @@ static var quick_add_item_lists:Dictionary[String, QuickAddItemList] = {
 	"Node" : node_list
 }
 
-## Gets the corresponding quick add item list to a node from [member quick_add_item_lists].
+## Gets the corresponding quick add item list to a node type from [member quick_add_item_lists].
 static func get_quick_add_item_list(node:Node) -> QuickAddItemList:
 	var script:Script = node.get_script()
 	var node_class:String = node.get_class()
@@ -433,7 +432,7 @@ static func get_quick_add_item_list(node:Node) -> QuickAddItemList:
 	
 	return quick_add_item_lists["Node"]
 
-## When an item is selected off of the list.
+## Called when an item is selected off of the list.
 func _item_selected(id:int) -> void:
 	if parent_node == null:
 		parent_node = get_editor_interface().get_edited_scene_root().get_child(0)
